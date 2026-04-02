@@ -59,6 +59,7 @@ def load_global() -> dict:
         image_name = str(cfg["docker"]["image"]).strip()
         interval = str(cfg["probe"]["interval"]).strip()
         discovery_interval = str(cfg["probe"]["discovery_interval"]).strip()
+        concurrency = str(cfg["probe"].get("concurrency", 4)).strip()
     except KeyError as e:
         die(f"missing required key in global.yaml: {e}")
 
@@ -72,6 +73,8 @@ def load_global() -> dict:
         die("probe.interval must be numeric in global.yaml")
     if not discovery_interval.isdigit():
         die("probe.discovery_interval must be numeric in global.yaml")
+    if not concurrency.isdigit() or int(concurrency) <= 0:
+        die("probe.concurrency must be a positive integer in global.yaml")
 
     return {
         "zabbix_server": zabbix_server,
@@ -79,6 +82,7 @@ def load_global() -> dict:
         "image_name": image_name,
         "interval": interval,
         "discovery_interval": discovery_interval,
+        "concurrency": concurrency,
     }
 
 
@@ -534,6 +538,7 @@ def build_env_content(probe: dict, global_cfg: dict) -> str:
         f'ZBX_HOST="{probe["zbx_host"]}"\n\n'
         f'INTERVAL="{global_cfg["interval"]}"\n'
         f'DISCOVERY_INTERVAL="{global_cfg["discovery_interval"]}"\n'
+        f'PROBE_CONCURRENCY="{global_cfg["concurrency"]}"\n'
     )
 
 

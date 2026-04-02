@@ -134,6 +134,7 @@ docker:
 probe:
   interval: 60            # 探测间隔（秒）
   discovery_interval: 300 # Zabbix LLD 发现间隔（秒）
+  concurrency: 4          # 每类探测的并发数（建议 2~10）
 ```
 
 ### `networks.csv`（仅 macvlan 模式）
@@ -195,6 +196,28 @@ probe-ct,http,https://www.baidu.com/,baidu-home,百度官网,
 | `http` | HTTP 可用性与响应时间 | `http.time[{#HTTPID}]` |
 | `tcp` | TCP 端口连通性 | `tcp.status[{#TCPID}]` |
 | `publicip` | 公网出口 IP | `net.publicip` |
+
+---
+
+## 🚀 并发探测（避免目标过多导致单周期跑不完）
+
+当前版本支持同一模块内并发探测（`mtr/dns/http/tcp`），默认并发数来自 `global.yaml`：
+
+```yaml
+probe:
+  concurrency: 4
+```
+
+你也可以在实例 `probe.env` 中按模块覆盖：
+
+```bash
+HTTP_CONCURRENCY=8
+DNS_CONCURRENCY=6
+TCP_CONCURRENCY=10
+MTR_CONCURRENCY=2
+```
+
+未设置模块并发时，回退到 `PROBE_CONCURRENCY`。
 
 ---
 

@@ -8,3 +8,4 @@ docker:
 probe:
   interval: 60
   discovery_interval: 300
+  concurrency: 4
