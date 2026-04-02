@@ -378,43 +378,31 @@ def read_targets(valid_probe_names: set[str]) -> dict[str, list[dict]]:
 
     grouped: dict[str, list[dict]] = defaultdict(list)
 
-    with TARGETS_CSV.open("r", encoding="utf-8-sig") as f:
-        lines = f.read().splitlines()
-
-    if not lines:
-        die("probe_targets.csv is empty")
-
-    header = lines[0]
-    header_cols = next(csv.reader([header]))
-    expected_header = ["probe_name", "module", "target", "id", "label", "extra"]
-    if header_cols != expected_header:
-        die(
-            "probe_targets.csv header must be exactly: "
-            "probe_name,module,target,id,label,extra"
-        )
-
-    for line_no, raw_line in enumerate(lines[1:], start=2):
-        if not raw_line.strip():
-            continue
-        cols = next(csv.reader([raw_line]))
-        if len(cols) != 6:
-            die(
-                f"probe_targets.csv line {line_no}: expected 6 columns, got {len(cols)}. "
-                f"Non-DNS rows must still keep the last empty 'extra' column."
-            )
-
     with TARGETS_CSV.open("r", newline="", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
-        required = {"probe_name", "module", "target", "id", "label", "extra"}
-
+        expected_header = ["probe_name", "module", "target", "id", "label", "extra"]
         if not reader.fieldnames:
             die("probe_targets.csv is empty")
 
-        missing = required - set(reader.fieldnames)
-        if missing:
-            die(f"probe_targets.csv missing required columns: {', '.join(sorted(missing))}")
+        if reader.fieldnames != expected_header:
+            die(
+                "probe_targets.csv header must be exactly: "
+                "probe_name,module,target,id,label,extra"
+            )
 
         for idx, row in enumerate(reader, start=2):
+            # DictReader: extra columns => row[None], missing columns => None value
+            if row.get(None):
+                die(
+                    f"probe_targets.csv line {idx}: expected 6 columns, got more than 6. "
+                    f"Non-DNS rows must still keep the last empty 'extra' column."
+                )
+            if any(row.get(col) is None for col in expected_header):
+                die(
+                    f"probe_targets.csv line {idx}: expected 6 columns, got fewer than 6. "
+                    f"Non-DNS rows must still keep the last empty 'extra' column."
+                )
+
             probe_name = (row.get("probe_name") or "").strip()
             module = (row.get("module") or "").strip().lower()
             target = (row.get("target") or "").strip()
@@ -617,14 +605,16 @@ def write_compose(probes: list[dict], global_cfg: dict) -> None:
 
         lines.append("")
 
-        if used_networks:
-            lines.append("networks:")
-            for net in sorted(used_networks):
-                lines.extend([
+    if used_networks:
+        lines.append("networks:")
+        for net in sorted(used_networks):
+            lines.extend(
+                [
                     f"  {net}:",
                     "    external: true",
                     "",
-                ])
+                ]
+            )
 
     COMPOSE_YML.write_text("\n".join(lines), encoding="utf-8")
 
