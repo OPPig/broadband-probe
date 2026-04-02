@@ -1,0 +1,10 @@
+zabbix:
+  server: 1.1.8.10
+  port: 10051
+
+docker:
+  image: broadband-probe:latest
+
+probe:
+  interval: 60
+  discovery_interval: 300

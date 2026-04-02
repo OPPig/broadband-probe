@@ -1,0 +1,11 @@
+module,target,id,label,extra
+mtr,223.5.5.5,ali-anycast,阿里Anycast,
+mtr,119.29.29.29,tencent-anycast,腾讯Anycast,
+dns,223.5.5.5,ali-dns,阿里DNS,www.baidu.com
+http,https://www.baidu.com/,baidu-home,百度官网,
+http,https://www.eastmoney.com/,eastmoney-home,东方财富,
+http,https://www.qq.com/,qq-home,QQ,
+http,https://www.hao123.com/,hao123-home,hao123,
+http,https://www.mi.com/,mi-home,小米,
+http,https://www.zhihu.com/,zhihu-home,知乎,
+http,https://www.taobao.com/,taobao,淘宝,

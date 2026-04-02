@@ -1,0 +1,3 @@
+name,zbx_host,checks,public_ip_url,network_mode,network_name,ip,dns_servers
+probe-ct,Probe-CT,"mtr dns http publicip",https://4.ipw.cn,host,,,"223.5.5.5"
+probe-local,Probe-LOCAL,"http dns publicip",https://4.ipw.cn,host,,,"8.8.8.8"
