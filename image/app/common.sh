@@ -34,3 +34,41 @@ load_targets() {
         source "${TARGETS_FILE:-/config/probe.targets}"
     fi
 }
+
+run_items_in_parallel() {
+    local csv_input="$1"
+    local worker_fn="$2"
+    local max_parallel="$3"
+
+    if ! [[ "$max_parallel" =~ ^[1-9][0-9]*$ ]]; then
+        max_parallel=1
+    fi
+
+    local -a pids=()
+    local item pid next_pids
+
+    while IFS= read -r item; do
+        [[ -n "$item" ]] || continue
+
+        "$worker_fn" "$item" &
+        pids+=("$!")
+
+        while (( ${#pids[@]} >= max_parallel )); do
+            next_pids=()
+            for pid in "${pids[@]}"; do
+                if kill -0 "$pid" 2>/dev/null; then
+                    next_pids+=("$pid")
+                else
+                    wait "$pid" || true
+                fi
+            done
+            pids=("${next_pids[@]}")
+
+            (( ${#pids[@]} >= max_parallel )) && sleep 0.05
+        done
+    done < <(split_csv "$csv_input")
+
+    for pid in "${pids[@]}"; do
+        wait "$pid" || true
+    done
+}
