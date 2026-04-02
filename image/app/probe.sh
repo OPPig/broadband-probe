@@ -165,7 +165,6 @@ for check in ${CHECKS:-}; do
     esac
 done | tee "$TMP_OUT"
 
-print_metric "probe.alive" "1"
 print_metric "probe.alive" "1" >> "$TMP_OUT"
 
 if should_send_discovery; then
