@@ -42,7 +42,7 @@ vim inventory/probes.csv          # 核心：探针列表
 vim inventory/probe_targets.csv  # 探测目标（可选，见下方说明）
 ```
 
-### 4. 构建镜像
+### 4. （可选）手动构建镜像
 
 ```bash
 cd image
@@ -50,10 +50,33 @@ docker build -t broadband-probe:latest .
 cd ..
 ```
 
+> 默认情况下，`./deploy.sh` 会自动构建镜像并自动注入宿主机 `UID/GID`，一般无需手动执行此步骤。
+>
+> 如需手动构建并对齐宿主机权限，可在构建时指定 UID/GID：
+
+```bash
+cd image
+docker build \
+  --build-arg PROBE_UID=$(id -u) \
+  --build-arg PROBE_GID=$(id -g) \
+  -t broadband-probe:latest .
+cd ..
+```
+
 ### 5. 部署
 
 ```bash
 ./deploy.sh
+```
+
+可选环境变量：
+
+```bash
+# 跳过自动构建镜像（例如 CI 已提前构建）
+SKIP_IMAGE_BUILD=1 ./deploy.sh
+
+# 手动指定容器内 probe 用户 UID/GID（默认取本机 id -u / id -g）
+PROBE_UID=1001 PROBE_GID=1001 ./deploy.sh
 ```
 
 ---
@@ -208,6 +231,14 @@ docker exec probe-ct ping -c 3 192.168.100.1
 - 检查 `probe_targets.csv` 中该 probe 是否有 `module=mtr` 的目标
 - 检查 `id` 是否在同一 probe 内重复
 - 查看容器日志：`docker logs probe-ct`
+
+### ❌ 挂载配置目录权限不足（使用非 root 运行后）
+
+- 容器内进程默认以 `probe` 用户运行，不要求宿主机存在同名用户。
+- 但挂载目录的文件权限必须允许该 UID/GID 访问。
+- 可使用以下方式之一解决：
+  - 重新构建镜像时通过 `--build-arg PROBE_UID/PROBE_GID` 对齐宿主机用户；
+  - 或手动调整宿主机挂载目录权限（如 `chown/chmod`）。
 
 ### ❌ 部署脚本报错 "command not found: python3"
 
