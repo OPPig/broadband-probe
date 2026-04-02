@@ -2,6 +2,7 @@
 
 run_check_mtr() {
     [[ -n "${MTR_TARGETS:-}" ]] || return 0
+    local mtr_count="${MTR_COUNT:-20}"
 
     while IFS= read -r item; do
         [[ -n "$item" ]] || continue
@@ -14,7 +15,7 @@ run_check_mtr() {
         local tmpfile
         tmpfile="$(mktemp)"
 
-        mtr -r -n -c 5 "$target" >"$tmpfile" 2>/dev/null || true
+        mtr -r -n -c "$mtr_count" "$target" >"$tmpfile" 2>/dev/null || true
 
         local last_line loss avg jitter
         last_line="$(tail -n 1 "$tmpfile" 2>/dev/null || true)"
