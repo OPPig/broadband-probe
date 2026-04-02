@@ -1,5 +1,8 @@
 FROM alpine:latest
 
+ARG PROBE_UID=1000
+ARG PROBE_GID=1000
+
 RUN apk add --no-cache \
     bash \
     curl \
@@ -9,7 +12,8 @@ RUN apk add --no-cache \
     ca-certificates \
     zabbix-utils
 
-RUN addgroup -S probe && adduser -S -G probe -u 1000 probe
+RUN addgroup -S -g "${PROBE_GID}" probe \
+    && adduser -S -D -H -u "${PROBE_UID}" -G probe probe
 
 WORKDIR /app
 COPY app/ /app/
