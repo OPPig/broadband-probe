@@ -617,14 +617,16 @@ def write_compose(probes: list[dict], global_cfg: dict) -> None:
 
         lines.append("")
 
-        if used_networks:
-            lines.append("networks:")
-            for net in sorted(used_networks):
-                lines.extend([
+    if used_networks:
+        lines.append("networks:")
+        for net in sorted(used_networks):
+            lines.extend(
+                [
                     f"  {net}:",
                     "    external: true",
                     "",
-                ])
+                ]
+            )
 
     COMPOSE_YML.write_text("\n".join(lines), encoding="utf-8")
 
