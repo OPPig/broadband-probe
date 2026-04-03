@@ -59,9 +59,12 @@ cd image
 docker build \
   --build-arg PROBE_UID=$(id -u) \
   --build-arg PROBE_GID=$(id -g) \
+  --build-arg APK_MIRROR=https://mirrors.tuna.tsinghua.edu.cn/alpine \
   -t broadband-probe:latest .
 cd ..
 ```
+
+> 如你所在网络访问 Alpine 默认源较慢，可通过 `APK_MIRROR` 指定更快镜像源。
 
 ### 5. 部署
 
@@ -77,6 +80,9 @@ SKIP_IMAGE_BUILD=1 ./deploy.sh
 
 # 手动指定容器内 probe 用户 UID/GID（默认取本机 id -u / id -g）
 PROBE_UID=1001 PROBE_GID=1001 ./deploy.sh
+
+# 构建时指定 Alpine 软件源镜像（用于加速 apk 安装）
+APK_MIRROR=https://mirrors.tuna.tsinghua.edu.cn/alpine ./deploy.sh
 ```
 
 ### 6. 一键卸载
