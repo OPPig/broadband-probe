@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM alpine:3.20
 
 ARG PROBE_UID=1000
 ARG PROBE_GID=1000
