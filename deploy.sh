@@ -110,6 +110,8 @@ build_image_if_needed() {
   local image_name
   local hash_file
   local current_hash
+  local probe_uid
+  local probe_gid
   image_name="$(resolve_image_name)"
   hash_file="$(image_hash_file "$image_name")"
   current_hash="$(compute_image_context_hash)"
@@ -128,9 +130,20 @@ build_image_if_needed() {
   fi
 
   log "step 0: build probe image ($image_name)"
+  probe_uid="${PROBE_UID:-$(id -u)}"
+  probe_gid="${PROBE_GID:-$(id -g)}"
+  if [[ "$probe_uid" == "0" ]]; then
+    warn "detected root uid (0), fallback PROBE_UID=1000 to avoid image user creation conflict"
+    probe_uid="1000"
+  fi
+  if [[ "$probe_gid" == "0" ]]; then
+    warn "detected root gid (0), fallback PROBE_GID=1000 to avoid image group creation conflict"
+    probe_gid="1000"
+  fi
+
   local -a build_args=(
-    --build-arg "PROBE_UID=${PROBE_UID:-$(id -u)}"
-    --build-arg "PROBE_GID=${PROBE_GID:-$(id -g)}"
+    --build-arg "PROBE_UID=${probe_uid}"
+    --build-arg "PROBE_GID=${probe_gid}"
   )
   if [[ -n "${APK_MIRROR:-}" ]]; then
     build_args+=(--build-arg "APK_MIRROR=${APK_MIRROR}")
