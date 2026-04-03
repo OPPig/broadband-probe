@@ -128,9 +128,16 @@ build_image_if_needed() {
   fi
 
   log "step 0: build probe image ($image_name)"
+  local -a build_args=(
+    --build-arg "PROBE_UID=${PROBE_UID:-$(id -u)}"
+    --build-arg "PROBE_GID=${PROBE_GID:-$(id -g)}"
+  )
+  if [[ -n "${APK_MIRROR:-}" ]]; then
+    build_args+=(--build-arg "APK_MIRROR=${APK_MIRROR}")
+  fi
+
   docker build \
-    --build-arg PROBE_UID="${PROBE_UID:-$(id -u)}" \
-    --build-arg PROBE_GID="${PROBE_GID:-$(id -g)}" \
+    "${build_args[@]}" \
     -t "$image_name" \
     "$IMAGE_DIR" || die "docker build failed for image: $image_name"
   echo "$current_hash" > "$hash_file"
