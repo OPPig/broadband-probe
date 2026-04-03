@@ -1,9 +1,14 @@
-FROM alpine:latest
+ARG ALPINE_VERSION=3.20
+FROM alpine:${ALPINE_VERSION}
 
 ARG PROBE_UID=1000
 ARG PROBE_GID=1000
+ARG ALPINE_VERSION=3.20
+ARG APK_MIRROR=https://mirrors.aliyun.com/alpine
 
 RUN apk add --no-cache \
+    --repository "${APK_MIRROR%/}/v${ALPINE_VERSION}/main" \
+    --repository "${APK_MIRROR%/}/v${ALPINE_VERSION}/community" \
     bash \
     curl \
     bind-tools \
