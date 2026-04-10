@@ -31,6 +31,7 @@ cp config/global.example.yaml config/global.yaml
 cp inventory/networks.example.csv  inventory/networks.csv
 cp inventory/probes.example.csv     inventory/probes.csv
 cp inventory/probe_targets.example.csv inventory/probe_targets.csv
+cp inventory/targets_special.example.csv inventory/targets_special.csv
 ```
 
 ### 3. 修改配置
@@ -40,6 +41,7 @@ vim config/global.yaml           # Zabbix 服务器地址、探测间隔
 vim inventory/networks.csv       # 仅 macvlan 模式需要
 vim inventory/probes.csv          # 核心：探针列表
 vim inventory/probe_targets.csv  # 探测目标（可选，见下方说明）
+vim inventory/targets_special.csv # 每台主机的专属目标（可选）
 ```
 
 ### 4. （可选）手动构建镜像
@@ -190,6 +192,26 @@ probe-ct,http,https://www.baidu.com/,baidu-home,百度官网,
 | `extra` | DNS 模块专用，填写待解析域名 |
 
 > ⚠️ 如果存在 `targets_template.csv`，则每次运行 `generate_configs.py` 时会**自动覆盖** `probe_targets.csv`。如需手动管理目标，请确认已删除或备份模板文件。
+
+### `targets_special.csv`（每台主机专属目标，可选）
+
+当你同时使用 `targets_template.csv` 时，模板会给所有启用了对应模块的 probe 生成“公共目标”；而 `targets_special.csv` 只会为指定 `probe_name` 追加专属目标。
+
+```csv
+probe_name,module,target,id,label,extra
+probe-ct,tcp,1.1.1.1:443,cloudflare-443,Cloudflare443,
+probe-local,http,https://ip.sb/,ip-sb-home,IP.SB,
+```
+
+说明：
+
+- 表头必须是：`probe_name,module,target,id,label,extra`
+- `probe_name` 必须在 `probes.csv` 中存在
+- `module` 仅支持 `mtr/dns/http/tcp`
+- `dns` 模块必须填写 `extra`（待解析域名）
+- 其他模块 `extra` 留空即可
+
+> ✅ 生成逻辑：`probe_targets.csv = targets_template.csv(公共目标) + targets_special.csv(主机专属目标)`
 
 ---
 
