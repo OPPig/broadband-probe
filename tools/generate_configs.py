@@ -23,6 +23,7 @@ PROBES_CSV = INVENTORY_DIR / "probes.csv"
 TARGETS_CSV = INVENTORY_DIR / "probe_targets.csv"
 NETWORKS_CSV = INVENTORY_DIR / "networks.csv"
 TEMPLATE_CSV = INVENTORY_DIR / "targets_template.csv"
+SPECIAL_TARGETS_CSV = INVENTORY_DIR / "targets_special.csv"
 COMPOSE_YML = GENERATED_DIR / "docker-compose.yml"
 
 VALID_MODULES = {"mtr", "dns", "http", "tcp", "publicip"}
@@ -307,6 +308,7 @@ def generate_targets_from_template(probes: list[dict]) -> None:
     if not TEMPLATE_CSV.exists():
         return
 
+    probe_map = {probe["name"]: probe for probe in probes}
     rows: list[dict] = []
     with TEMPLATE_CSV.open("r", newline="", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
@@ -362,6 +364,66 @@ def generate_targets_from_template(probes: list[dict]) -> None:
                 }
             )
 
+    if SPECIAL_TARGETS_CSV.exists():
+        with SPECIAL_TARGETS_CSV.open("r", newline="", encoding="utf-8-sig") as f:
+            reader = csv.DictReader(f)
+
+            required = {"probe_name", "module", "target", "id", "label", "extra"}
+            if not reader.fieldnames:
+                die("targets_special.csv is empty")
+
+            missing = required - set(reader.fieldnames)
+            if missing:
+                die(
+                    "targets_special.csv missing required columns: "
+                    f"{', '.join(sorted(missing))}"
+                )
+
+            special_rows = list(reader)
+
+        for idx, row in enumerate(special_rows, start=2):
+            probe_name = (row.get("probe_name") or "").strip()
+            module = (row.get("module") or "").strip().lower()
+            target = (row.get("target") or "").strip()
+            item_id = (row.get("id") or "").strip()
+            label = (row.get("label") or "").strip()
+            extra = (row.get("extra") or "").strip()
+
+            if not probe_name:
+                die(f"targets_special.csv line {idx}: probe_name is empty")
+            if probe_name not in probe_map:
+                die(f"targets_special.csv line {idx}: unknown probe_name: {probe_name}")
+            if module not in VALID_TARGET_MODULES:
+                die(f"targets_special.csv line {idx}: invalid module '{module}'")
+            if not target:
+                die(f"targets_special.csv line {idx}: target is empty")
+            if not item_id:
+                die(f"targets_special.csv line {idx}: id is empty")
+            if not label:
+                die(f"targets_special.csv line {idx}: label is empty")
+            if module == "dns" and not extra:
+                die(f"targets_special.csv line {idx}: dns row requires extra(domain)")
+            if module != "dns" and extra:
+                warn(f"targets_special.csv line {idx}: extra is ignored for module '{module}'")
+
+            enabled_modules = set(probe_map[probe_name]["check_list"])
+            if module not in enabled_modules:
+                die(
+                    f"targets_special.csv line {idx}: probe '{probe_name}' checks "
+                    f"does not include module '{module}'"
+                )
+
+            rows.append(
+                {
+                    "probe_name": probe_name,
+                    "module": module,
+                    "target": target,
+                    "id": item_id,
+                    "label": label,
+                    "extra": extra,
+                }
+            )
+
     with TARGETS_CSV.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(
             f,
@@ -370,7 +432,10 @@ def generate_targets_from_template(probes: list[dict]) -> None:
         writer.writeheader()
         writer.writerows(rows)
 
-    info("auto generated probe_targets.csv from targets_template.csv")
+    if SPECIAL_TARGETS_CSV.exists():
+        info("auto generated probe_targets.csv from targets_template.csv + targets_special.csv")
+    else:
+        info("auto generated probe_targets.csv from targets_template.csv")
 
 
 # =========================
