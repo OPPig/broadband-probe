@@ -9,3 +9,4 @@ probe:
   interval: 60
   discovery_interval: 300
   concurrency: 4
+  public_ip_url: "https://4.ipw.cn,https://api.ipify.org,https://ifconfig.me/ip"
