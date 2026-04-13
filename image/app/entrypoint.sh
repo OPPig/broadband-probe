@@ -7,6 +7,8 @@ if [[ -f /config/probe.env ]]; then
 fi
 
 while true; do
-    bash /app/probe.sh
+    if ! bash /app/probe.sh; then
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] probe run failed, continue next interval"
+    fi
     sleep "${INTERVAL:-60}"
 done

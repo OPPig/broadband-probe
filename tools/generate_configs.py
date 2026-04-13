@@ -61,6 +61,7 @@ def load_global() -> dict:
         interval = str(cfg["probe"]["interval"]).strip()
         discovery_interval = str(cfg["probe"]["discovery_interval"]).strip()
         concurrency = str(cfg["probe"].get("concurrency", 4)).strip()
+        default_public_ip_url = str(cfg["probe"].get("public_ip_url", "")).strip()
     except KeyError as e:
         die(f"missing required key in global.yaml: {e}")
 
@@ -84,6 +85,7 @@ def load_global() -> dict:
         "interval": interval,
         "discovery_interval": discovery_interval,
         "concurrency": concurrency,
+        "default_public_ip_url": default_public_ip_url,
     }
 
 
@@ -162,7 +164,7 @@ def read_networks() -> dict[str, dict]:
 # =========================
 # Probes
 # =========================
-def read_probes(networks: dict[str, dict]) -> list[dict]:
+def read_probes(networks: dict[str, dict], global_cfg: dict) -> list[dict]:
     if not PROBES_CSV.exists():
         die(f"probes csv not found: {PROBES_CSV}")
 
@@ -208,8 +210,6 @@ def read_probes(networks: dict[str, dict]) -> list[dict]:
                 die(f"probes.csv line {idx}: zbx_host is empty")
             if not checks:
                 die(f"probes.csv line {idx}: checks is empty")
-            if not public_ip_url:
-                die(f"probes.csv line {idx}: public_ip_url is empty")
             if not network_mode:
                 die(f"probes.csv line {idx}: network_mode is empty")
             if network_mode not in VALID_NETWORK_MODES:
@@ -229,6 +229,12 @@ def read_probes(networks: dict[str, dict]) -> list[dict]:
             unknown = [c for c in check_list if c not in VALID_MODULES]
             if unknown:
                 die(f"probes.csv line {idx}: unknown checks: {', '.join(unknown)}")
+            effective_public_ip_url = public_ip_url or global_cfg["default_public_ip_url"]
+            if "publicip" in check_list and not effective_public_ip_url:
+                die(
+                    f"probes.csv line {idx}: publicip is enabled but no public_ip_url set. "
+                    "Please set probes.csv public_ip_url or global.yaml probe.public_ip_url"
+                )
 
             dns_servers = [x.strip() for x in dns_servers_raw.split(",") if x.strip()]
             if not dns_servers:
@@ -287,7 +293,7 @@ def read_probes(networks: dict[str, dict]) -> list[dict]:
                     "zbx_host": zbx_host,
                     "checks": checks,
                     "check_list": check_list,
-                    "public_ip_url": public_ip_url,
+                    "public_ip_url": effective_public_ip_url,
                     "network_mode": network_mode,
                     "network_name": network_name,
                     "ip": ip_raw,
@@ -695,7 +701,7 @@ def write_compose(probes: list[dict], global_cfg: dict) -> None:
 def main() -> None:
     global_cfg = load_global()
     networks = read_networks()
-    probes = read_probes(networks)
+    probes = read_probes(networks, global_cfg)
 
     # 如果有模板文件，就自动生成 probe_targets.csv
     generate_targets_from_template(probes)

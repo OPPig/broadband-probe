@@ -143,6 +143,7 @@ probe:
   interval: 60            # 探测间隔（秒）
   discovery_interval: 300 # Zabbix LLD 发现间隔（秒）
   concurrency: 4          # 每类探测的并发数（建议 2~10）
+  public_ip_url: "https://4.ipw.cn,https://api.ipify.org,https://ifconfig.me/ip" # 可选：publicip 默认地址（支持多个，逗号分隔）
 ```
 
 ### `networks.csv`（仅 macvlan 模式）
@@ -158,9 +159,9 @@ macvlan-100,100,eth0,192.168.100.0/24,192.168.100.1
 
 ```csv
 name,zbx_host,checks,public_ip_url,network_mode,network_name,ip,dns_servers
-probe-ct,Probe-CT,"mtr dns http publicip",https://4.ipw.cn,macvlan,macvlan-100,192.168.100.10,223.5.5.5
-probe-cu,Probe-CU,"mtr dns http",https://4.ipw.cn,macvlan,macvlan-200,192.168.200.10,119.29.29.29
-probe-local,Probe-LOCAL,"http dns publicip",https://4.ipw.cn,host,,,223.5.5.5
+probe-ct,Probe-CT,"mtr dns http publicip",,macvlan,macvlan-100,192.168.100.10,223.5.5.5
+probe-cu,Probe-CU,"mtr dns http",,macvlan,macvlan-200,192.168.200.10,119.29.29.29
+probe-local,Probe-LOCAL,"http dns publicip","https://api64.ipify.org,https://ip.sb",host,,,223.5.5.5
 ```
 
 | 字段 | 说明 |
@@ -168,6 +169,7 @@ probe-local,Probe-LOCAL,"http dns publicip",https://4.ipw.cn,host,,,223.5.5.5
 | `name` | 容器名称，同一文件中唯一 |
 | `zbx_host` | Zabbix 主机名，需与 Zabbix Web UI 中的主机名一致 |
 | `checks` | 启用的探测模块，空格分隔：`mtr dns http tcp publicip` |
+| `public_ip_url` | 可选。`publicip` 模块使用的出口 IP 探测地址；支持多个 URL（英文逗号分隔）并轮询探测。留空则回退到 `global.yaml` 的 `probe.public_ip_url` |
 | `network_mode` | `macvlan` 或 `host` |
 | `network_name` | macvlan 模式必填，对应 `networks.csv` 中的 `network_name` |
 | `ip` | macvlan 模式必填，需在对应 subnet 范围内 |
