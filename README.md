@@ -321,12 +321,6 @@ sudo apt install python3 python3-pip
 pip3 install pyyaml
 ```
 
-### ❓ Codex 提示“请创建新的拉取请求（PR）”
-
-- 这通常表示当前会话无法继续更新一个在外部创建/管理的旧 PR。
-- 处理方式：在当前分支继续提交，然后创建一个新的 PR（标题可标注 `v2` / `follow-up`）。
-- 建议在新 PR 描述中附上“替代旧 PR 链接”，方便审阅关联。
-
 ---
 
 ## 🧭 Roadmap
