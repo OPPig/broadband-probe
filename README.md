@@ -222,10 +222,12 @@ probe-local,http,https://ip.sb/,ip-sb-home,IP.SB,
 | 类型 | 说明 | Zabbix Key 示例 |
 | :--- | :--- | :--- |
 | `mtr` | 延迟 / 丢包 / 抖动 | `net.loss[{#MTRID}]`、`net.latency[{#MTRID}]` |
-| `dns` | DNS 解析可用性 | `dns.status[{#DNSID}]` |
-| `http` | HTTP 可用性与响应时间 | `http.time[{#HTTPID}]` |
+| `dns` | DNS 解析可用性与耗时 | `dns.status[{#DNSID}]`、`dns.time[{#DNSID}]` |
+| `http` | HTTP 可用性、状态码与响应时间 | `http.status[{#HTTPID}]`、`http.code[{#HTTPID}]`、`http.time[{#HTTPID}]` |
 | `tcp` | TCP 端口连通性 | `tcp.status[{#TCPID}]` |
 | `publicip` | 公网出口 IP | `net.publicip` |
+
+> 说明：`dns/http` 每个周期每个目标只探测一次；失败时 `*.time` 上报 `0`，建议结合 `*.status` 一起看。
 
 ---
 
