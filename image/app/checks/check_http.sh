@@ -7,20 +7,21 @@ run_check_http_item() {
 
     log "running http: url=${url}, id=${item_id}, label=${label}"
 
-    local http_time http_code http_time_ms status
+    local curl_output http_time http_code http_time_ms status
 
-    http_time="$(curl -o /dev/null -s -w '%{time_total}' --connect-timeout 3 --max-time 8 "$url" || true)"
-    http_code="$(curl -o /dev/null -s -w '%{http_code}' --connect-timeout 3 --max-time 8 "$url" || true)"
-
-    http_time_ms="0"
-    if [[ "$http_time" =~ ^[0-9.]+$ ]]; then
-        http_time_ms="$(awk "BEGIN {printf \"%.0f\", $http_time*1000}")"
-    fi
+    curl_output="$(curl -o /dev/null -s -w '%{http_code} %{time_total}' --connect-timeout 3 --max-time 8 "$url" 2>/dev/null || true)"
+    http_code="${curl_output%% *}"
+    http_time="${curl_output##* }"
 
     if [[ "$http_code" =~ ^[23][0-9][0-9]$ ]]; then
         status="1"
     else
         status="0"
+    fi
+
+    http_time_ms="0"
+    if [[ "$status" == "1" ]] && [[ "$http_time" =~ ^[0-9.]+$ ]]; then
+        http_time_ms="$(awk "BEGIN {printf \"%.0f\", $http_time*1000}")"
     fi
 
     print_metric "http.time[${item_id}]" "$http_time_ms"
